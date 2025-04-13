@@ -1,14 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React from 'react';
+import MainLayout from '@/components/Layout/MainLayout';
+import DashboardStats from '@/components/Dashboard/DashboardStats';
+import LowStockAlert from '@/components/Dashboard/LowStockAlert';
+import ExpiringProducts from '@/components/Dashboard/ExpiringProducts';
+import { WarehouseProvider } from '@/context/WarehouseContext';
+
+const Dashboard: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <WarehouseProvider>
+      <MainLayout>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-1">Панель управления</h1>
+          <p className="text-muted-foreground">Обзор основных показателей склада</p>
+        </div>
+        
+        <div className="mb-8">
+          <DashboardStats />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <LowStockAlert />
+          <ExpiringProducts />
+        </div>
+      </MainLayout>
+    </WarehouseProvider>
   );
 };
 
-export default Index;
+export default Dashboard;
