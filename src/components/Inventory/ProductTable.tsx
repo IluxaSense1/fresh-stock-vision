@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { useWarehouse } from '@/context/WarehouseContext';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Calendar, FileText, Search, Trash2, Edit, Package } from 'lucide-react';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { format, parseISO } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 const ProductTable: React.FC = () => {
   const { products, stocks } = useWarehouse();
@@ -23,99 +24,134 @@ const ProductTable: React.FC = () => {
   });
   
   // Filter products based on search term
-  const filteredProducts = productsWithStock.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = productsWithStock.filter(product => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(searchLower) ||
+      product.sku.toLowerCase().includes(searchLower) ||
+      product.description.toLowerCase().includes(searchLower)
+    );
+  });
   
-  // Function to determine badge color based on stock level
-  const getStockBadgeVariant = (quantity: number) => {
-    if (quantity <= 5) return "destructive";
-    if (quantity <= 10) return "warning";
-    return "success";
+  // Format date
+  const formatDate = (dateString: string) => {
+    return format(parseISO(dateString), 'dd MMM yyyy', { locale: ru });
   };
   
-  // Function to format price
-  const formatPrice = (price: number) => {
-    return price.toFixed(2) + ' ₽';
+  // Get stock status
+  const getStockStatus = (quantity: number) => {
+    if (quantity <= 5) return { status: 'low', label: 'Низкий' };
+    if (quantity <= 15) return { status: 'medium', label: 'Средний' };
+    return { status: 'good', label: 'Хороший' };
+  };
+  
+  // Get badge variant based on stock status
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'low':
+        return 'destructive';
+      case 'medium':
+        return 'outline'; // Changed from 'warning' to 'outline'
+      case 'good':
+        return 'secondary'; // Changed from 'success' to 'secondary'
+      default:
+        return 'default';
+    }
   };
   
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <CardTitle>Список товаров</CardTitle>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle>Товары</CardTitle>
+          <div className="flex gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="search"
                 placeholder="Поиск товаров..."
-                className="pl-8 w-full sm:w-[250px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
               />
             </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
             <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Добавить
+              <Package className="mr-2 h-4 w-4" />
+              Добавить товар
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="table-header">Артикул</th>
-                <th className="table-header">Название</th>
-                <th className="table-header">Локация</th>
-                <th className="table-header">Цена</th>
-                <th className="table-header">Срок годности</th>
-                <th className="table-header">Остаток</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <tr key={product.id} className="table-row">
-                    <td className="table-cell font-medium">{product.sku}</td>
-                    <td className="table-cell">
-                      <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-muted-foreground">{product.description}</div>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <span className="inline-block px-2 py-1 rounded-md bg-secondary text-xs">
-                        {product.location?.name}
-                      </span>
-                    </td>
-                    <td className="table-cell">{formatPrice(product.price)}</td>
-                    <td className="table-cell">
-                      {format(new Date(product.expiration_date), 'dd MMM yyyy', { locale: ru })}
-                    </td>
-                    <td className="table-cell">
-                      <Badge variant={getStockBadgeVariant(product.stock)}>
-                        {product.stock} шт.
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Артикул</TableHead>
+                <TableHead>Наименование</TableHead>
+                <TableHead>Цена</TableHead>
+                <TableHead>Остаток</TableHead>
+                <TableHead>Срок годности</TableHead>
+                <TableHead>Локация</TableHead>
+                <TableHead className="text-right">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Товары не найдены. Попробуйте изменить параметры поиска.
+                  </TableCell>
+                </TableRow>
               ) : (
-                <tr>
-                  <td colSpan={6} className="table-cell text-center py-8 text-muted-foreground">
-                    {searchTerm ? 'Товары не найдены. Попробуйте изменить поисковый запрос.' : 'Нет доступных товаров.'}
-                  </td>
-                </tr>
+                filteredProducts.map((product) => {
+                  const stockStatus = getStockStatus(product.stock);
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">
+                        {product.sku}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-muted-foreground truncate max-w-xs">
+                          {product.description}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.price.toFixed(2)} ₽
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getBadgeVariant(stockStatus.status)} className="font-semibold">
+                          {product.stock} • {stockStatus.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(product.expiration_date)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.location?.name}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>
